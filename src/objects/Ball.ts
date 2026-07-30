@@ -16,7 +16,7 @@ export class Ball {
             new THREE.MeshStandardMaterial({ color: '#ff00c8' }),
         );
 
-        this.mesh.position.y = 3; // this.radius;
+        this.mesh.position.y = 3;
 
         this.pBody = this.physicsWorld.createPhysicalBody(this.mesh);
     }
