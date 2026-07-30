@@ -5,6 +5,7 @@ import { CubeFormation } from '../objects/CubeFormation';
 import { Table } from '../objects/Table';
 import { Shooter } from '../objects/Shooter';
 import { PhysicsWorld } from './PhysicsWorld';
+import type { GLTFLoaderManager } from './GLTFLoaderManager';
 
 export class Level {
     public group: THREE.Group;
@@ -16,12 +17,13 @@ export class Level {
     constructor(
         private scene: THREE.Scene,
         private physicsWorld: PhysicsWorld,
+        private loaderManager: GLTFLoaderManager,
         // private gui: GUI,
     ) {
         this.group = new THREE.Group();
     }
 
-    public createLevel() {
+    public async createLevel() {
         this.cubeFormation = new CubeFormation(this.physicsWorld, this.scene);
         const cubeGroup = this.cubeFormation.createWallFormation(15, 15, 0.5);
 
@@ -42,8 +44,10 @@ export class Level {
         // tablePositionGui.add(this.table.mesh.position, "y", -10, 10, 0.5);
         // tablePositionGui.add(this.table.mesh.position, "z", -10, 10, 0.5);
 
-        this.shooter = new Shooter();
+        this.shooter = new Shooter(this.loaderManager);
+        await this.shooter.load();
         this.shooter.mesh.position.z = 5;
+        this.shooter.mesh.rotateY(Math.PI / 2);
 
         const shootableGroup = new THREE.Group();
         shootableGroup.add(cubeGroup, this.table.mesh);

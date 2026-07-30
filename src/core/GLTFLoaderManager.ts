@@ -1,18 +1,19 @@
 // import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-const duckUrl = `${import.meta.env.BASE_URL}models/Duck/glTF/Duck.gltf`;
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
+// const duckUrl = `${import.meta.env.BASE_URL}models/Duck/glTF/Duck.gltf`;
+export const duckDracoUrl = `${import.meta.env.BASE_URL}models/Duck/glTF-Draco/Duck.gltf`;
+
+const darcoUrl = `${import.meta.env.BASE_URL}draco/`;
 
 export class GLTFLoaderManager {
     public loader: GLTFLoader;
 
-    constructor(/*scene: THREE.Scene*/) {
+    constructor() {
+        const dracoLoader = new DRACOLoader();
+        dracoLoader.setDecoderPath(darcoUrl);
+
         this.loader = new GLTFLoader();
-        this.loader.load(duckUrl,
-            () => { // data: GLTF
-                // console.log(data);
-                // scene.add(data.scene.children[0].clone());
-                // scene.add(data.scene);
-            },
-        );
+        this.loader.setDRACOLoader(dracoLoader);
     }
 }

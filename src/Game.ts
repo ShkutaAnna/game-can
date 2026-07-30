@@ -8,19 +8,18 @@ import { CameraManager } from './core/CameraManager';
 import { Field } from './objects/Field';
 import { LightManager } from './core/LightManager';
 import { PhysicsWorld } from './core/PhysicsWorld';
-// import { GLTFLoaderManager } from './core/GLTFLoaderManager';
+import { GLTFLoaderManager } from './core/GLTFLoaderManager';
 import { Level } from './core/Level';
 
 export class Game {
     private rendererManager = new RendererManager();
     private sceneManager = new SceneManager();
     private camaraManager = new CameraManager();
+    private loaderManager = new GLTFLoaderManager();
 
     private physicsWorld = new PhysicsWorld();
 
     private orbitControls: OrbitControls;
-
-    // private gltfLoaderManager = 
 
     private clock = new THREE.Clock();
 
@@ -32,7 +31,6 @@ export class Game {
     constructor() {
         this.gui.hide();
 
-        // new GLTFLoaderManager(this.sceneManager.scene);
         new LightManager(this.sceneManager.scene);
 
         this.orbitControls = new OrbitControls(this.camaraManager.camera, this.rendererManager.renderer.domElement);
@@ -43,7 +41,7 @@ export class Game {
         this.field = new Field(this.physicsWorld);
         this.sceneManager.scene.add(this.field.mesh);
 
-        this.level = new Level(this.sceneManager.scene, this.physicsWorld);
+        this.level = new Level(this.sceneManager.scene, this.physicsWorld, this.loaderManager);
         this.level.createLevel();
 
         this.sceneManager.scene.add(this.level.group);
