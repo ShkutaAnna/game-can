@@ -1,16 +1,14 @@
 import * as THREE from 'three';
-import CANNON from 'cannon';
+// import CANNON from 'cannon';
 import { PhysicsWorld } from '../core/PhysicsWorld';
+import { PhysicalObject } from './PhysicalObject';
 
-export class Ball {
-    public mesh: THREE.Mesh;
-    public pBody: CANNON.Body;
-
-    private radius = 0.5;
-
+export class Ball extends PhysicalObject {
     constructor(
-        private physicsWorld: PhysicsWorld,
+        public radius: number,
+        protected physicsWorld: PhysicsWorld,
     ) {
+        super(physicsWorld);
         this.mesh = new THREE.Mesh(
             new THREE.SphereGeometry(this.radius),
             new THREE.MeshStandardMaterial({ color: '#ff00c8' }),
@@ -22,7 +20,12 @@ export class Ball {
     }
 
     public update() {
-        this.mesh.position.copy(this.pBody.position);
-        this.mesh.quaternion.copy(this.pBody.quaternion);
+        this.updatePhysicalBody();
+    }
+
+    public initPBody() {
+        if (!this.mesh) return;
+
+        this.pBody = this.physicsWorld.createPhysicalBody(this.mesh, 1);
     }
 }

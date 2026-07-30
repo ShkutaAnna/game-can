@@ -24,6 +24,7 @@ export class Level {
     }
 
     public async createLevel() {
+        // ADD LOADING SCREEN
         this.cubeFormation = new CubeFormation(this.physicsWorld, this.scene);
         const cubeGroup = this.cubeFormation.createWallFormation(15, 15, 0.5);
 
