@@ -8,6 +8,8 @@ export class CubeFormation {
 
     public groupSize: { h: number, w: number, d: number } = { h: 0, w: 0, d: 0 };
 
+    public collisionWall?: THREE.Mesh;
+
     constructor(
         public physicsWorld: PhysicsWorld,
         public scene: THREE.Scene,
@@ -20,6 +22,10 @@ export class CubeFormation {
         }
 
         this.group = new THREE.Group();
+
+        const ax = new THREE.AxesHelper(5);
+        this.group?.add(ax);
+        // ax.position.y = -1
 
         for (let i = 0; i < widthCount; i++) {
             // + shift from 0,0
@@ -40,6 +46,19 @@ export class CubeFormation {
             w: widthCount * cubeSize,
             d: cubeSize,
         };
+
+        const margin = 3;
+        const ch = this.groupSize.h + margin;
+        const cw = this.groupSize.w + margin;
+        this.collisionWall = new THREE.Mesh(
+            new THREE.PlaneGeometry(cw, ch),
+            new THREE.MeshBasicMaterial({
+                transparent: true,
+                opacity: 0,
+            }),
+        );
+        this.collisionWall.position.set(cw / 2 - margin / 2, ch / 2 - margin / 2, cubeSize/2);
+        this.group.add(this.collisionWall);
 
         return this.group;
     }

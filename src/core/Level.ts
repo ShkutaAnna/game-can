@@ -10,6 +10,8 @@ import type { GLTFLoaderManager } from './GLTFLoaderManager';
 export class Level {
     public group: THREE.Group;
 
+    public collisionWall?: THREE.Mesh;
+
     private cubeFormation?: CubeFormation;
     private table?: Table;
     private shooter?: Shooter;
@@ -27,6 +29,7 @@ export class Level {
         // ADD LOADING SCREEN
         this.cubeFormation = new CubeFormation(this.physicsWorld, this.scene);
         const cubeGroup = this.cubeFormation.createWallFormation(15, 15, 0.5);
+        this.collisionWall = this.cubeFormation.collisionWall;
 
         const { w: cubeGroupWidth, d: cubeGroupDepth } = this.cubeFormation.groupSize;
         const tableMargin = 1;
@@ -45,16 +48,16 @@ export class Level {
         // tablePositionGui.add(this.table.mesh.position, "y", -10, 10, 0.5);
         // tablePositionGui.add(this.table.mesh.position, "z", -10, 10, 0.5);
 
-        this.shooter = new Shooter(this.loaderManager);
+        this.shooter = new Shooter(this.loaderManager, this.physicsWorld);
         await this.shooter.load();
-        this.shooter.mesh.position.z = 5;
-        this.shooter.mesh.rotateY(Math.PI / 2);
+        this.shooter.group.position.z = 5;
+        this.shooter.group.rotateY(Math.PI / 2);
 
         const shootableGroup = new THREE.Group();
         shootableGroup.add(cubeGroup, this.table.mesh);
         shootableGroup.position.z = -5;
 
-        this.group.add(shootableGroup, this.shooter.mesh);
+        this.group.add(shootableGroup, this.shooter.group);
 
         this.scene.updateMatrixWorld(true);
 
@@ -65,5 +68,13 @@ export class Level {
     public update() {
         this.cubeFormation?.update();
         this.table?.update();
+        this.shooter?.update();
+    }
+
+    public shoot(targetPoint: THREE.Vector3) {
+        if (!this.shooter) return;
+
+        this.shooter.shoot(targetPoint);
+        // check cubes
     }
 }

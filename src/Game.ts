@@ -11,12 +11,15 @@ import { PhysicsWorld } from './core/PhysicsWorld';
 import { GLTFLoaderManager } from './core/GLTFLoaderManager';
 import { Level } from './core/Level';
 import { Fox } from './objects/Fox';
+import { InputManager } from './core/InputManager';
 
 export class Game {
     private rendererManager = new RendererManager();
     private sceneManager = new SceneManager();
     private cameraManager = new CameraManager();
     private loaderManager = new GLTFLoaderManager();
+    private inputManager = new InputManager();
+    private raycaster = new THREE.Raycaster();
 
     private physicsWorld = new PhysicsWorld();
 
@@ -34,6 +37,9 @@ export class Game {
         this.gui.hide();
 
         new LightManager(this.sceneManager.scene);
+
+        this.inputManager.onPoinerDown(this.handleClick.bind(this));
+        this.inputManager.onResize(this.handleResize);
 
         this.orbitControls = new OrbitControls(this.cameraManager.camera, this.rendererManager.renderer.domElement);
         this.orbitControls.enabled = false;
@@ -62,17 +68,8 @@ export class Game {
 
         this.addDecorations();
 
-        window.addEventListener("resize", () => {
-            const width = document.documentElement.clientWidth;
-            const height = document.documentElement.clientHeight;
-            this.rendererManager.renderer.setSize(width, height);
-            this.cameraManager.camera.aspect = width / height;
-            this.cameraManager.camera.updateProjectionMatrix();
-        })
-
         this.animate();
     }
-
 
     public async addDecorations() {
         this.fox = new Fox(this.loaderManager);
@@ -106,6 +103,42 @@ export class Game {
         // foxCopyGui.add(foxGroupCopy.rotation, 'y', -Math.PI, Math.PI, 0.0001);
     }
 
+    public handleClick(event: PointerEvent) {
+        if (!this.level.collisionWall) return;
+
+        const { x, y } = event;
+
+        // const width = document.documentElement.clientWidth;
+        // const height = document.documentElement.clientHeight;
+
+        const rect = this.rendererManager.renderer.domElement.getBoundingClientRect();
+
+        const mouse = new THREE.Vector2(0, 0);
+
+        // mouse.x = x / width * 2 - 1;
+        // mouse.y = -(y / height * 2 - 1);
+
+        mouse.x = ((x - rect.left) / rect.width) * 2 - 1;
+        mouse.y = -((y - rect.top) / rect.height) * 2 + 1;
+
+        this.raycaster.setFromCamera(mouse, this.cameraManager.camera);
+        
+        const hit = this.raycaster.intersectObject(this.level.collisionWall, false);
+
+        if (!hit[0]) return;
+
+        const { point } = hit[0];
+        this.level.shoot(point);
+    }
+
+    public handleResize() {
+        const width = document.documentElement.clientWidth;
+        const height = document.documentElement.clientHeight;
+        this.rendererManager.renderer.setSize(width, height);
+        this.cameraManager.camera.aspect = width / height;
+        this.cameraManager.camera.updateProjectionMatrix();
+    }
+
     animate = () => {
         requestAnimationFrame(this.animate);
 
@@ -123,4 +156,24 @@ export class Game {
 
         this.rendererManager.renderer.render(this.sceneManager.scene, this.cameraManager.camera);
     }
+
+    // private drawRaycasterLine() {
+        // const origin = this.raycaster.ray.origin;
+        // const direction = this.raycaster.ray.direction;
+
+        // const points = [
+        //     origin,
+        //     origin.clone().add(direction.clone().multiplyScalar(100))
+        // ];
+
+        // const geometry = new THREE.BufferGeometry().setFromPoints(points);
+
+        // const material = new THREE.LineBasicMaterial({
+        //     color: 0xff0000
+        // });
+
+        // const line = new THREE.Line(geometry, material);
+
+        // this.sceneManager.scene.add(line);
+    // }
 }
