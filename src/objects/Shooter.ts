@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import GUI from "lil-gui";
 import { duckUrl, GLTFLoaderManager } from '../core/GLTFLoaderManager';
 import { Ball } from './Ball';
 import type { PhysicsWorld } from '../core/PhysicsWorld';
@@ -11,11 +12,16 @@ export class Shooter {
     // private height = 2;
     // private depth = 2;
 
-    private ball?: Ball;
+    public ball?: Ball;
+
+    public existingBalls: Ball[] = [];
+
+    private flightTime = 0.5;
     
     constructor(
         public loaderManager: GLTFLoaderManager,
         public physicsWorld: PhysicsWorld,
+        public gui: GUI,
     ) {
         // this.mesh = new THREE.Mesh(
         //     new THREE.BoxGeometry(this.width, this.height, this.depth),
@@ -30,6 +36,12 @@ export class Shooter {
                 (data) => {
                     this.mesh = data.scene.children[0].clone();
                     this.group.add(this.mesh);
+
+                    // const ballGui = this.gui.addFolder('Ball');
+                    // ballGui.add(this.ball.mesh.position, "x", -10, 10, 0.01);
+                    // ballGui.add(this.ball.mesh.position, "y", -10, 10, 0.01);
+                    // ballGui.add(this.ball.mesh.position, "z", -10, 10, 0.01);
+
                     resolve();
                 },
                 undefined,
@@ -38,18 +50,32 @@ export class Shooter {
         });
     }
 
-    public update() {
-        this.ball?.update();
+    public update(dt: number) {
+        for (let i = this.existingBalls.length - 1; i >= 0; i--) {
+            const ball = this.existingBalls[i];
+
+            ball.lifetime += dt;
+
+            if (ball.lifetime > this.flightTime * 3) {
+                const removedBall = this.existingBalls.splice(i, 1)[0] ?? null;
+                if (removedBall) {
+                    removedBall.dispose();
+                }
+            } else {
+                ball.update();
+            }
+        }
     }
 
     public shoot(target: THREE.Vector3) {
-        // TODO: track balls, remove in 5 sec ?
         this.ball = new Ball(0.1, this.physicsWorld);
-        this.ball.mesh.position.set(0, 2, 0); // set from duck mouth
+        this.group.add(this.ball.mesh);
+        // duck mouse considering init rotation
+        this.ball.mesh.position.set(0.9, 1.2, -0.2);
         this.ball.initPBody();
 
-        this.group.add(this.ball.mesh);
+        this.ball.throwTo(target, { flightTime: this.flightTime });
 
-        this.ball.throwTo(target, { flightTime: 1 });
+        this.existingBalls.push(this.ball);
     }
 }

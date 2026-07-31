@@ -2,7 +2,28 @@ import * as THREE from 'three';
 import { Materials, PhysicsWorld } from '../core/PhysicsWorld';
 import { PhysicalObject } from './PhysicalObject';
 
-export class Table extends PhysicalObject {    
+export class Table extends PhysicalObject {
+    get minX(): number {
+        // TODO: calc from mesh if no pbody
+        return this.pBody?.position?.x - this.width / 2;
+    }
+
+    get maxX(): number {
+        return this.pBody?.position?.x + this.width / 2;
+    }
+
+    get minZ(): number {
+        if (!this.pBody) return NaN;
+
+        return this.pBody?.position?.z - this.height / 2;
+    }
+
+    get maxZ(): number {
+        if (!this.pBody) return NaN;
+
+        return this.pBody?.position?.z + this.height / 2;
+    }
+
     constructor(
         private width: number,
         private height: number,

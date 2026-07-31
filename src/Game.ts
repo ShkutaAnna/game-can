@@ -39,7 +39,7 @@ export class Game {
         new LightManager(this.sceneManager.scene);
 
         this.inputManager.onPoinerDown(this.handleClick.bind(this));
-        this.inputManager.onResize(this.handleResize);
+        this.inputManager.onResize(this.handleResize.bind(this));
 
         this.orbitControls = new OrbitControls(this.cameraManager.camera, this.rendererManager.renderer.domElement);
         this.orbitControls.enabled = false;
@@ -49,7 +49,7 @@ export class Game {
         this.field = new Field(this.physicsWorld);
         this.sceneManager.scene.add(this.field.mesh);
 
-        this.level = new Level(this.sceneManager.scene, this.physicsWorld, this.loaderManager);
+        this.level = new Level(this.sceneManager.scene, this.physicsWorld, this.loaderManager, this.gui);
         this.level.createLevel();
 
         this.sceneManager.scene.add(this.level.group);
@@ -65,6 +65,9 @@ export class Game {
 
         // const helper = new THREE.DirectionalLightHelper(this.lightManager.directionalLight);
         // this.sceneManager.scene.add(helper);
+
+        const ax = new THREE.AxesHelper();
+        this.sceneManager.scene.add(ax);
 
         this.addDecorations();
 
@@ -115,9 +118,6 @@ export class Game {
 
         const mouse = new THREE.Vector2(0, 0);
 
-        // mouse.x = x / width * 2 - 1;
-        // mouse.y = -(y / height * 2 - 1);
-
         mouse.x = ((x - rect.left) / rect.width) * 2 - 1;
         mouse.y = -((y - rect.top) / rect.height) * 2 + 1;
 
@@ -147,7 +147,7 @@ export class Game {
         this.physicsWorld.world.step(1/60, dt, 3);
 
         this.field.update();
-        this.level.update();
+        this.level.update(dt);
         this.fox?.update(dt);
 
         if (this.orbitControls.enabled) {
