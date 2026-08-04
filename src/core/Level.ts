@@ -6,21 +6,31 @@ import { Table } from '../objects/Table';
 import { Shooter } from '../objects/Shooter';
 import { PhysicsWorld } from './PhysicsWorld';
 import { GLTFLoaderManager } from './GLTFLoaderManager';
+import type { Game } from '../Game';
+import { SoundNames, type AudioManager } from './AudioManager';
 
 export class Level {
     public group: THREE.Group;
 
     public collisionWall?: THREE.Mesh;
 
+    public isLevelComplete = false;
+
     private cubeFormation?: CubeFormation;
     private table?: Table;
     private shooter?: Shooter;
 
+    get cubeFormationWorldPosition(): THREE.Vector3 | null {
+        return this.cubeFormation?.group?.getWorldPosition(new THREE.Vector3(0, 0, 0)) ?? null;
+    }
+
     constructor(
+        private game: Game,
         private scene: THREE.Scene,
         private physicsWorld: PhysicsWorld,
         private loaderManager: GLTFLoaderManager,
         private gui: GUI,
+        private audioManager: AudioManager,
     ) {
         this.group = new THREE.Group();
     }
@@ -28,7 +38,7 @@ export class Level {
     public async createLevel() {
         // ADD LOADING SCREEN
         this.cubeFormation = new CubeFormation(this.physicsWorld, this.scene);
-        const cubeGroup = this.cubeFormation.createWallFormation(7, 7, 0.5);
+        const cubeGroup = this.cubeFormation.createWallFormation(1, 1, 0.5);
         this.collisionWall = this.cubeFormation.collisionWall;
 
         const { w: cubeGroupWidth, d: cubeGroupDepth } = this.cubeFormation.groupSize;
@@ -70,9 +80,13 @@ export class Level {
         this.table?.update();
         this.shooter?.update(dt);
 
+        if (this.isLevelComplete) return;
+
         if (this.allCubesFallen()) {
             // WIN
             // let Game now that level is finished
+            this.isLevelComplete = true;
+            this.game.handleLevelFinish();
         }
     }
 
@@ -80,6 +94,8 @@ export class Level {
         if (!this.shooter) return;
 
         this.shooter.shoot(targetPoint);
+
+        this.audioManager.play(SoundNames.blast);
     }
     
     public allCubesFallen(): boolean {

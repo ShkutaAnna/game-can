@@ -12,6 +12,9 @@ import { GLTFLoaderManager } from './core/GLTFLoaderManager';
 import { Level } from './core/Level';
 import { Fox } from './objects/Fox';
 import { InputManager } from './core/InputManager';
+import { getPolarAngle } from './utils';
+import { UIManager } from './ui/UIManager';
+import { AudioManager } from './core/AudioManager';
 
 export class Game {
     private rendererManager = new RendererManager();
@@ -31,6 +34,9 @@ export class Game {
     private level: Level;
     private fox?: Fox;
 
+    private uiManager: UIManager;
+    private audioManager = new AudioManager(this.cameraManager.camera);
+
     private gui = new GUI();
 
     constructor() {
@@ -42,14 +48,14 @@ export class Game {
         this.inputManager.onResize(this.handleResize.bind(this));
 
         this.orbitControls = new OrbitControls(this.cameraManager.camera, this.rendererManager.renderer.domElement);
-        this.orbitControls.enabled = false;
+        this.orbitControls.enabled = true;
         this.cameraManager.camera.position.set(0, 3.5, 9.5);
         this.cameraManager.camera.rotateX(-Math.PI / 27);
 
         this.field = new Field(this.physicsWorld);
         this.sceneManager.scene.add(this.field.mesh);
 
-        this.level = new Level(this.sceneManager.scene, this.physicsWorld, this.loaderManager, this.gui);
+        this.level = new Level(this, this.sceneManager.scene, this.physicsWorld, this.loaderManager, this.gui, this.audioManager);
         this.level.createLevel();
 
         this.sceneManager.scene.add(this.level.group);
@@ -71,6 +77,9 @@ export class Game {
 
         this.addDecorations();
 
+        this.uiManager = new UIManager();
+        this.uiManager.hideActions();
+
         this.animate();
     }
 
@@ -80,9 +89,16 @@ export class Game {
 
         // const foxGroupCopy = SkeletonUtils.clone(fox.group);
 
-        this.fox.group.rotation.y = Math.PI / 1.5;
+        // this.fox.group.rotation.y = Math.PI / 1.5;
         this.fox.group.position.x = -3.5;
         this.fox.group.position.z = 3.5;
+
+        const center =  this.level.cubeFormationWorldPosition;
+        if (center) {
+            const angle = getPolarAngle(this.fox.group.position, center) - 0.2; // ? -0.2 (counter clockwise in circle)
+            const radius = this.fox.group.position.distanceTo(center);
+            this.fox.lookAhead(angle, center, radius);
+        }
 
         // foxGroupCopy.rotation.y = -Math.PI / 4;
         // foxGroupCopy.position.x = 3.5;
@@ -137,6 +153,14 @@ export class Game {
         this.rendererManager.renderer.setSize(width, height);
         this.cameraManager.camera.aspect = width / height;
         this.cameraManager.camera.updateProjectionMatrix();
+    }
+
+    public handleLevelFinish() {
+        if (this.level.isLevelComplete && this.level.cubeFormationWorldPosition) {
+            this.fox?.runInCircle(true, this.level.cubeFormationWorldPosition);
+
+            // this.uiManager.showActions();
+        }
     }
 
     animate = () => {
