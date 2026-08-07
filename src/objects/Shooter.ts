@@ -3,6 +3,7 @@ import GUI from "lil-gui";
 import { duckUrl, GLTFLoaderManager } from '../core/GLTFLoaderManager';
 import { Ball } from './Ball';
 import type { PhysicsWorld } from '../core/PhysicsWorld';
+import { destroyGroup } from '../utils';
 
 export class Shooter {
     public group = new THREE.Group();
@@ -22,6 +23,7 @@ export class Shooter {
         public loaderManager: GLTFLoaderManager,
         public physicsWorld: PhysicsWorld,
         public gui: GUI,
+        public scene: THREE.Scene,
     ) {
         // this.mesh = new THREE.Mesh(
         //     new THREE.BoxGeometry(this.width, this.height, this.depth),
@@ -59,7 +61,7 @@ export class Shooter {
             if (ball.lifetime > this.flightTime * 3) {
                 const removedBall = this.existingBalls.splice(i, 1)[0] ?? null;
                 if (removedBall) {
-                    removedBall.dispose();
+                    removedBall.destroy();
                 }
             } else {
                 ball.update();
@@ -77,5 +79,12 @@ export class Shooter {
         this.ball.throwTo(target, { flightTime: this.flightTime });
 
         this.existingBalls.push(this.ball);
+    }
+
+    public destroy() {
+        destroyGroup(this.group, this.scene);
+        this.existingBalls.forEach((ball) => {
+            ball.destroy();
+        })
     }
 }

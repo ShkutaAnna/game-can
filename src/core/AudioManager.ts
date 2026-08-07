@@ -5,6 +5,8 @@ export class AudioManager {
     public listener: THREE.AudioListener;
     public loader: THREE.AudioLoader;
 
+    private unlocked = false;
+
     public sounds: { [key in SoundNames]: THREE.Audio | null } = {
         [SoundNames.blast]: null,
     };
@@ -37,6 +39,13 @@ export class AudioManager {
             audio.stop();
 
         audio.play();
+    }
+
+    public async unlock() {
+        if (this.unlocked) return;
+
+        await this.listener.context.resume();
+        this.unlocked = true;
     }
 
     private getSoundUrlByName(name: SoundNames): string {

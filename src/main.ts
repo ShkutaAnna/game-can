@@ -1,4 +1,5 @@
 import './style.css';
-import { Game } from './Game.ts';
+import './styles/header.css';
+import { Game } from './game/Game.ts';
 
 new Game();

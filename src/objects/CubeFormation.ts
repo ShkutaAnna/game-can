@@ -1,6 +1,7 @@
 import * as THREE from 'three';
-import { Cube } from './Cude';
+import { Cube } from './Cube';
 import type { PhysicsWorld } from '../core/PhysicsWorld';
+import { destroyGroup, disposeObject } from '../utils';
 
 export class CubeFormation {
     public group?: THREE.Group;
@@ -16,15 +17,12 @@ export class CubeFormation {
     ) {}
 
     public createWallFormation(widthCount: number, heightCount: number, cubeSize: number): THREE.Group {
-        if (this.group) {
-            this.destroyGroup(this.group, this.scene);
-            this.cubes = [];
-        }
+        this.destroy();
 
         this.group = new THREE.Group();
 
-        const ax = new THREE.AxesHelper(5);
-        this.group?.add(ax);
+        // const ax = new THREE.AxesHelper(5);
+        // this.group?.add(ax);
         // ax.position.y = -1
 
         for (let i = 0; i < widthCount; i++) {
@@ -73,36 +71,11 @@ export class CubeFormation {
         this.cubes.forEach((cube) => cube.update());
     }
 
-    private disposeObject(object: THREE.Object3D) {
-        object.traverse((child) => {
-            if ((child as THREE.Mesh).isMesh) {
-                const mesh = child as THREE.Mesh;
-
-                mesh.geometry.dispose();
-
-                const materials = Array.isArray(mesh.material)
-                    ? mesh.material
-                    : [mesh.material];
-
-                materials.forEach((material) => {
-                    // dispose textures
-                    for (const key in material) {
-                        const value = (material as any)[key];
-                        if (value && value.isTexture) {
-                            value.dispose();
-                        }
-                    }
-
-                    material.dispose();
-                });
-            }
-        });
-    }
-
-    private destroyGroup(group: THREE.Group, scene: THREE.Scene) {
-        this.disposeObject(group);
-        scene.remove(group);
-
-        group.clear();
+    public destroy() {
+        this.cubes.forEach((cube) => cube.destroy());
+        if (this.group)
+            destroyGroup(this.group, this.scene);
+        if (this.collisionWall)
+            disposeObject(this.collisionWall);
     }
 }

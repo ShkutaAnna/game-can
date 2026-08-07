@@ -2,19 +2,20 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import GUI from "lil-gui";
 
-import { RendererManager } from './core/RendererManager';
-import { SceneManager } from './core/SceneManager';
-import { CameraManager } from './core/CameraManager';
-import { Field } from './objects/Field';
-import { LightManager } from './core/LightManager';
-import { PhysicsWorld } from './core/PhysicsWorld';
-import { GLTFLoaderManager } from './core/GLTFLoaderManager';
-import { Level } from './core/Level';
-import { Fox } from './objects/Fox';
-import { InputManager } from './core/InputManager';
-import { getPolarAngle } from './utils';
-import { UIManager } from './ui/UIManager';
-import { AudioManager } from './core/AudioManager';
+import { RendererManager } from '../core/RendererManager';
+import { SceneManager } from '../core/SceneManager';
+import { CameraManager } from '../core/CameraManager';
+import { Field } from '../objects/Field';
+import { LightManager } from '../core/LightManager';
+import { PhysicsWorld } from '../core/PhysicsWorld';
+import { GLTFLoaderManager } from '../core/GLTFLoaderManager';
+import { Level } from '../core/Level';
+import { Fox } from '../objects/Fox';
+import { InputManager } from '../core/InputManager';
+import { getPolarAngle } from '../utils';
+import { UIManager } from '../ui/UIManager';
+import { AudioManager } from '../core/AudioManager';
+import { Levels } from './levels/LevelDefinitions';
 
 export class Game {
     private rendererManager = new RendererManager();
@@ -31,13 +32,17 @@ export class Game {
     private clock = new THREE.Clock();
 
     private field: Field;
-    private level: Level;
     private fox?: Fox;
 
     private uiManager: UIManager;
     private audioManager = new AudioManager(this.cameraManager.camera);
 
     private gui = new GUI();
+
+    private currentLevelIndex = 0;
+    private level?: Level;
+
+    private score = 0;
 
     constructor() {
         this.gui.hide();
@@ -48,17 +53,19 @@ export class Game {
         this.inputManager.onResize(this.handleResize.bind(this));
 
         this.orbitControls = new OrbitControls(this.cameraManager.camera, this.rendererManager.renderer.domElement);
-        this.orbitControls.enabled = true;
+        this.orbitControls.enabled = false;
         this.cameraManager.camera.position.set(0, 3.5, 9.5);
         this.cameraManager.camera.rotateX(-Math.PI / 27);
 
         this.field = new Field(this.physicsWorld);
         this.sceneManager.scene.add(this.field.mesh);
 
-        this.level = new Level(this, this.sceneManager.scene, this.physicsWorld, this.loaderManager, this.gui, this.audioManager);
-        this.level.createLevel();
+        // this.level = new Level(this, this.sceneManager.scene, this.physicsWorld, this.loaderManager, this.gui, this.audioManager);
+        // this.level.createLevel(new WallFormationBuilder(2, 3, 0.5));
+        this.currentLevelIndex = 0;
+        this.startLevel(this.currentLevelIndex);
 
-        this.sceneManager.scene.add(this.level.group);
+        this.addDecorations();
 
         const cameraGui = this.gui.addFolder('Camera');
         cameraGui.add(this.cameraManager.camera.position, "x", -40, 40, 0.5);
@@ -72,15 +79,33 @@ export class Game {
         // const helper = new THREE.DirectionalLightHelper(this.lightManager.directionalLight);
         // this.sceneManager.scene.add(helper);
 
-        const ax = new THREE.AxesHelper();
-        this.sceneManager.scene.add(ax);
-
-        this.addDecorations();
+        // const ax = new THREE.AxesHelper();
+        // this.sceneManager.scene.add(ax);
 
         this.uiManager = new UIManager();
         this.uiManager.hideActions();
+        this.uiManager.setScore(this.score);
 
         this.animate();
+    }
+
+    async startLevel(index: number) {
+        const config = Levels[index];
+        if (!config) return;
+
+        if (this.level)
+            this.level.destroyObjects();
+
+        this.level = new Level(
+            this,
+            this.sceneManager.scene,
+            this.physicsWorld,
+            this.loaderManager,
+            this.gui,
+            this.audioManager
+        );
+
+        await this.level.createLevel(config);
     }
 
     public async addDecorations() {
@@ -93,7 +118,7 @@ export class Game {
         this.fox.group.position.x = -3.5;
         this.fox.group.position.z = 3.5;
 
-        const center =  this.level.cubeFormationWorldPosition;
+        const center = this.level?.cubeFormationWorldPosition;
         if (center) {
             const angle = getPolarAngle(this.fox.group.position, center) - 0.2; // ? -0.2 (counter clockwise in circle)
             const radius = this.fox.group.position.distanceTo(center);
@@ -123,7 +148,9 @@ export class Game {
     }
 
     public handleClick(event: PointerEvent) {
-        if (!this.level.collisionWall) return;
+        this.audioManager.unlock();
+
+        if (!this.level?.collisionWall) return;
 
         const { x, y } = event;
 
@@ -156,10 +183,16 @@ export class Game {
     }
 
     public handleLevelFinish() {
-        if (this.level.isLevelComplete && this.level.cubeFormationWorldPosition) {
-            this.fox?.runInCircle(true, this.level.cubeFormationWorldPosition);
+        if (this.level?.isLevelComplete && this.level?.cubeFormationWorldPosition) {
+            this.fox?.runInCircle(true, this.level?.cubeFormationWorldPosition);
 
             // this.uiManager.showActions();
+
+            this.score += 100;
+            this.uiManager.setScore(this.score);
+
+            this.currentLevelIndex++;
+            this.startLevel(this.currentLevelIndex);
         }
     }
 
@@ -171,7 +204,7 @@ export class Game {
         this.physicsWorld.world.step(1/60, dt, 3);
 
         this.field.update();
-        this.level.update(dt);
+        this.level?.update(dt);
         this.fox?.update(dt);
 
         if (this.orbitControls.enabled) {

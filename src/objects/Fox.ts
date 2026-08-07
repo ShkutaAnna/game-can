@@ -65,7 +65,9 @@ export class Fox {
         );
     }
 
-    public runInCircle(isActive: boolean, centerPoint?: THREE.Vector3) {        
+    public runInCircle(isActive: boolean, centerPoint?: THREE.Vector3) {    
+        if (isActive && this.runCircleParams.isReturning) return;
+
         if (!centerPoint && isActive) return;
 
         if (!isActive && this.runCircleParams.isRunning) {
@@ -92,7 +94,7 @@ export class Fox {
             setTimeout(() => {
                 this.runInCircle(false);
                 console.log('stopped running')
-            }, 5000);
+            }, 1000);
         }
     }
 

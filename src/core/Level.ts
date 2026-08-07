@@ -6,8 +6,9 @@ import { Table } from '../objects/Table';
 import { Shooter } from '../objects/Shooter';
 import { PhysicsWorld } from './PhysicsWorld';
 import { GLTFLoaderManager } from './GLTFLoaderManager';
-import type { Game } from '../Game';
+import type { Game } from '../game/Game';
 import { SoundNames, type AudioManager } from './AudioManager';
+import type { LevelConfig } from '../game/levels/LevelConfig';
 
 export class Level {
     public group: THREE.Group;
@@ -35,10 +36,11 @@ export class Level {
         this.group = new THREE.Group();
     }
 
-    public async createLevel() {
-        // ADD LOADING SCREEN
+    public async createLevel(config: LevelConfig) {
+        const { formationBuilder } = config;
+        
         this.cubeFormation = new CubeFormation(this.physicsWorld, this.scene);
-        const cubeGroup = this.cubeFormation.createWallFormation(1, 1, 0.5);
+        const cubeGroup = formationBuilder.build(this.cubeFormation);
         this.collisionWall = this.cubeFormation.collisionWall;
 
         const { w: cubeGroupWidth, d: cubeGroupDepth } = this.cubeFormation.groupSize;
@@ -58,7 +60,7 @@ export class Level {
         // tablePositionGui.add(this.table.mesh.position, "y", -10, 10, 0.5);
         // tablePositionGui.add(this.table.mesh.position, "z", -10, 10, 0.5);
 
-        this.shooter = new Shooter(this.loaderManager, this.physicsWorld, this.gui);
+        this.shooter = new Shooter(this.loaderManager, this.physicsWorld, this.gui, this.scene);
         await this.shooter.load();
         this.shooter.group.position.z = 5;
         this.shooter.group.rotateY(Math.PI / 2);
@@ -73,6 +75,8 @@ export class Level {
 
         this.cubeFormation.cubes.forEach((cube) => cube.initPBody());
         this.table.initPBody();
+
+        this.scene.add(this.group);
     }
 
     public update(dt: number) {
@@ -122,5 +126,11 @@ export class Level {
         });
 
         return !tableHasCubes;
+    }
+
+    public destroyObjects() {
+        this.cubeFormation?.destroy();
+        this.table?.destroy();
+        this.shooter?.destroy();
     }
 }

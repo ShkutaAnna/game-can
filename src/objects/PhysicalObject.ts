@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import type { PhysicsWorld } from "../core/PhysicsWorld";
+import { disposeObject } from '../utils';
 
 export class PhysicalObject {
     public mesh!: THREE.Mesh;
@@ -26,5 +27,10 @@ export class PhysicalObject {
                 this.mesh.quaternion.copy(this.pBody.quaternion);
             }
         }
+    }
+
+    public destroy() {
+        this.physicsWorld.world.remove(this.pBody);
+        disposeObject(this.mesh);
     }
 }

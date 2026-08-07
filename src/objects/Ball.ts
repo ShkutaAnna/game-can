@@ -55,15 +55,4 @@ export class Ball extends PhysicalObject {
         this.pBody.linearDamping = 0;
         this.pBody.angularDamping = 0;
     }
-
-    public dispose() {
-        if (this.pBody)
-            this.physicsWorld.world.remove(this.pBody);
-
-        if (this.mesh) {
-            this.mesh.geometry.dispose();
-            (this.mesh.material as THREE.MeshBasicMaterial).dispose();
-            this.mesh.parent?.remove(this.mesh);
-        }
-    }
 }
